@@ -2988,15 +2988,19 @@ INSERT INTO comision VALUES (
 COMMIT;
 
 
--- Caso 1: Listado de Clientes con Rango de Renta.
+--          === ACTIVIDAD SUMATIVA EXPERIENCIA 1 ===
+-- === Caso de Estudio: ASOCIADOS Corredora de Propiedades ===
 
+-- Caso 1: Listado de Clientes con Rango de Renta.
 SELECT
     TO_CHAR(numrut_cli, '99G999G999') || '-' || dvrut_cli AS "RUT Cliente",
     INITCAP(nombre_cli || ' ' || appaterno_cli || ' ' || apmaterno_cli) AS "Nombre Completo Cliente",
     INITCAP(direccion_cli) AS "Dirección Cliente",
-    TO_CHAR(renta_cli, '$99G999G999') AS "Renta Cliente",   
-    
+    TO_CHAR(renta_cli, '$99G999G999') AS "Renta Cliente",
+    -- SUBSTR para extraer datos del string de una posicion deseada.
+    -- usado para incluir el simbolo - entre el numero de telefono y cumplir con el formato requerido.
     '0' || SUBSTR(celular_cli, 1, 1) || '-' || SUBSTR(celular_cli, 2, 3) || '-' || SUBSTR(celular_cli, 5, 4) AS "Celular Cliente",
+-- Case para clasificar la renta segun cada tramo de ingreso.
 CASE
     WHEN renta_cli > 500000 THEN 'TRAMO 1'
     WHEN renta_cli BETWEEN 400000 AND 500000 THEN 'TRAMO 2'
@@ -3004,13 +3008,15 @@ CASE
     WHEN renta_cli < 200000 THEN 'TRAMO 4'
 END AS "Trama Renta Cliente"
 FROM CLIENTE
-WHERE 
+WHERE
+    -- Restriccion para no incluir clientes sin telefono registrado.
     celular_cli IS NOT NULL AND
+    -- Simbolo & permite solicitar dato por consola al usuario.
     renta_cli BETWEEN &RENTA_MINIMA AND &RENTA_MAXIMA
 ORDER BY "Nombre Completo Cliente" ASC;
 
--- Caso 2: Sueldo Promedio por Categoría de Empleado.
 
+-- Caso 2: Sueldo Promedio por Categoría de Empleado.
 SELECT
     id_categoria_emp AS "CODIGO_CATEGORIA",      
     CASE
@@ -3019,30 +3025,26 @@ SELECT
         WHEN id_categoria_emp = 3 THEN 'Ejecutivo de Arriendo'
         WHEN id_categoria_emp = 4 THEN 'Auxiliar'
     END AS "DESCRIPCION_CATEGORIA",
+    -- Funcion COUNT para contar los empleados por su numero de rut.
     COUNT(numrut_emp) AS "CANTIDAD_EMPLEADOS",
     CASE
         WHEN id_sucursal = 10 THEN 'Sucursal Las Condes'
         WHEN id_sucursal = 20 THEN 'Sucursal Santiago Centro'
         WHEN id_sucursal = 30 THEN 'Sucursal Providencia'
         WHEN id_sucursal = 40 THEN 'Sucursal Vitacura'
-    END AS "SUCURSAL",
+    END AS "SUCURSAL",    
     LPAD(TO_CHAR((AVG(sueldo_emp)), '$99G999G999'), 16, ' ') AS "SUELDO_PROMEDIO"
 FROM EMPLEADO
+-- Se corrige WHERE a HAVING segun uso correcto para funciones agrupadas.
 HAVING AVG(sueldo_emp) >= &SUELDO_PROMEDIO_MINIMO
 GROUP BY 
     id_categoria_emp,
-    id_sucursal,
-    CASE
-        WHEN id_sucursal = 10 THEN 'Sucursal Las Condes'
-        WHEN id_sucursal = 20 THEN 'Sucursal Santiago Centro'
-        WHEN id_sucursal = 30 THEN 'Sucursal Providencia'
-        WHEN id_sucursal = 40 THEN 'Sucursal Vitacura'
-    END
+    id_sucursal
+    -- Se elimina incorporacion de CASE redundante en este punto.
 ORDER BY "SUELDO_PROMEDIO" DESC;
 
 
 -- Caso 3: Arriendo Promedio por Tipo de Propiedad.
-
 SELECT
     LPAD(id_tipo_propiedad, 12, ' ') AS "CODIGO_TIPO",
     CASE
